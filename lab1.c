@@ -1,58 +1,43 @@
-
-
-/**
- * main.c
- */
-int main(void)
-{
-	return 0;
-}
 #include <msp430.h>
-#define RED_LED BIT0 //P1.0
-#define GREEN_LED BIT6 //P6.6
-#define BUTTON1 BIT1 //push button P4.1
-#define BUTTON2 BIT2 //push button P2.3
 
-
+#define RED_LED BIT0    // Assuming P1.0 is connected to the RED LED
+#define GREEN_LED BIT6  // Assuming P1.6 is connected to the GREEN LED
+#define BUTTON1 BIT1    // Assuming P4.1 is connected to Button S1
+#define BUTTON2 BIT3    // Assuming P2.3 is connected to Button S2
 
 void main(void)
 {
-WDTCTL = WDTPW | WDTHOLD;
-P1OUT &= ~BIT0;  //p1.0 red led
-P6OUT &= ~BIT6; //p6.6 greenled
-P1DIR |= BIT0;
-P6DIR |= BIT6;
+    WDTCTL = WDTPW | WDTHOLD;   // Stop watchdog timer
+    PM5CTL0 &= ~LOCKLPM5;       // Disable the GPIO power-on default high-impedance mode
 
+    // Configure LED pins as output
+    P1DIR |= RED_LED | GREEN_LED;
+    P1OUT &= ~(RED_LED | GREEN_LED); // Start with both LEDs off
 
-P4DIR &= ~BIT1;//clear P4.1(s1)
-P4REN |= BIT1;//Enable pull up/down resistor
-P4OUT |= BIT1;//Make resistor a pull up
+    // Configure Button S1 pin as input with pull-up resistor
+    P4DIR &= ~BUTTON1;
+    P4REN |= BUTTON1;
+    P4OUT |= BUTTON1;
 
-P2DIR &= ~BIT3;//clear P2.3(s2)
-P2REN |= BIT3;//Enable pull up/down resistor
-P2OUT |= BIT3;//Make resistor a pull up
+    // Configure Button S2 pin as input with pull-up resistor
+    P2DIR &= ~BUTTON2;
+    P2REN |= BUTTON2;
+    P2OUT |= BUTTON2;
 
-
-
-PM5CTL0 &= ~LOCKLPM5;                   // Disable the GPIO power-on default high-impedance mode
-                                           // to activate previously configured port settings
-int count = 0;
-while(1){
-        if((P4IN & BUTTON1) == 0x00){
-        _delay_cycles(5000);
-        if((P4IN & BUTTON1) == 0x00){
-            P1OUT ^= RED_LED;
-            } while((P4IN & BUTTON1) == 0x00);
+    while(1)
+    {
+        if(!(P4IN & BUTTON1))   // Check if button S1 is pressed
+        {
+            __delay_cycles(100000);  // Debounce delay
+            P1OUT ^= RED_LED;        // Toggle RED LED
+            while(!(P4IN & BUTTON1)); // Wait until button S1 is released
         }
 
-        else if((P2IN & BUTTON2) == 0x00){
-         _delay_cycles(5000);
-        if((P2IN & BUTTON2) == 0x00){
-            P6OUT |= GREEN_LED;
-            }
-        while((P2IN & BUTTON2) == 0x00);}
-
-*/
-}
-//return 0;
+        if(!(P2IN & BUTTON2))   // Check if button S2 is pressed
+        {
+            __delay_cycles(100000);  // Debounce delay
+            P1OUT ^= GREEN_LED;       // Toggle GREEN LED
+            while(!(P2IN & BUTTON2)); // Wait until button S2 is released
+        }
+    }
 }
